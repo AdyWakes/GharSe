@@ -265,7 +265,7 @@ async function build() {
       { text: "Tech4Bharat, GAVS 2026", options: { breakLine: true } },
       { text: "Agentic AI track  ·  Problem 6.3" },
     ], { x: M + 0.1, y: 4.5, w: 7.6, h: 0.85, fontSize: 20, color: COL.bg });
-    txt(s, "Team: [Team name]  ·  [Founder names]", {
+    txt(s, "Team Clo  ·  Founder: Adarsh Kumar", {
       x: M + 0.1, y: 5.55, w: 7.6, h: 0.45, fontSize: 20, bold: true, color: COL.bg,
     });
 
@@ -283,7 +283,7 @@ async function build() {
     chip(s, "DRAFT · CHECK BEFORE PRINTING", lx + 0.35, ly + lh - 0.68, lw - 0.7, { fill: COL.turmeric, fontSize: 11, charSpacing: 0.5 });
 
     s.addNotes(
-      "Hi, we are GharSe. Ghar se means 'from home'.\n" +
+      "Hi, I'm Adarsh Kumar from team Clo, and this is GharSe. Ghar se means 'from home'.\n" +
         "We help home food makers take a product from their kitchen to a store shelf.\n" +
         "We're building for Problem 6.3 in the Agentic AI track."
     );
@@ -613,7 +613,7 @@ async function build() {
     const s = sectionSlide("Business", "Follow the money");
     const cy = 1.6, ch = 4.95, side = 3.3, mid = CW - 2 * side - 0.6;
     const cols = [
-      { x: M, w: side, icon: "LuHouse", head: "Sellers", body: "Core is free. A paid plan adds unlimited products and print-ready label packs at [₹__/month], to be validated.", hi: false },
+      { x: M, w: side, icon: "LuHouse", head: "Sellers", body: "Free for one product. \u20B999/month adds unlimited products and print-ready label packs: less than one jar of achaar.", hi: false },
       { x: M + side + 0.3, w: mid, icon: "LuStore", head: "Buyers", body: "Retailers, ONDC seller apps and marketplaces spend effort finding small suppliers whose paperwork is in order. GharSe brings them compliance-ready producers. Paid per lead or by subscription.", hi: true },
       { x: M + side + mid + 0.6, w: side, icon: "LuHandshake", head: "Partners", body: "Referral fees from packaging and label printers, and from food testing labs for shelf-life tests.", hi: false },
     ];
@@ -627,7 +627,7 @@ async function build() {
 
     s.addNotes(
       "We follow the money in three directions.\n" +
-        "Sellers get the core for free, with a paid plan for more products and print-ready label packs. We'll validate the price in our interviews.\n" +
+        "Sellers get one product free. For 99 rupees a month, less than one jar of achaar, they get unlimited products and print-ready label packs. We'll test that price in our interviews.\n" +
         "The big one is buyers. Retailers, ONDC seller apps and marketplaces all struggle to find small suppliers whose paperwork is in order. We bring them those producers, paid per lead or by subscription.\n" +
         "And partners like label printers and testing labs pay referral fees."
     );
@@ -663,9 +663,9 @@ async function build() {
     const s = sectionSlide("Plan", "Status and roadmap");
     const items = [
       ["Now", "Prototype in build", "Chat simulator, tested maths core, 2 demo products: aam ka achaar, besan ladoo", true],
-      ["Nov 2026", "Field interviews", "with home food sellers in NCR. Findings: [to add]", false],
+      ["Nov 2026", "Field interviews", "with 20 home food sellers in NCR, to test the flow and the \u20B999 price", false],
       ["Dec 2026", "End-to-end demo", "Voice note to label PDF, costing, batch, checklist and listing in under 3 minutes", false],
-      ["Next 6 months", "Pilot", "with [__] sellers, WhatsApp live, first buyer-side partnership", false],
+      ["Next 6 months", "Pilot", "with 50 sellers, WhatsApp live, first buyer-side partnership", false],
     ];
     const gw = (CW - 3 * 0.3) / 4, ly = 2.25;
     line(s, M + gw / 2, ly, W - M - gw / 2, ly, COL.line, 3);
@@ -687,13 +687,13 @@ async function build() {
     card(s, M, 5.85, CW, 0.9, { fill: COL.turmericTint, shadow: false });
     txt(s, [
       { text: "Pilot success metric: ", options: { bold: true } },
-      { text: "[__] sellers with a compliant label and at least one sale beyond their town." },
+      { text: "25 of the 50 pilot sellers with a compliant label and at least one sale beyond their town." },
     ], { x: M + 0.35, y: 5.85, w: CW - 0.7, h: 0.9, fontSize: 22, valign: "middle" });
 
     s.addNotes(
       "Where we are: the prototype is in build, with a WhatsApp-style chat, a tested maths core and two fully worked demo products.\n" +
-        "In November we interview home food sellers in NCR. In December we show the full flow live: one voice note to a label, a costing, a batch, a checklist and a listing in under three minutes.\n" +
-        "After that, a pilot. We'll judge it on one thing: sellers with a compliant label who make at least one sale beyond their town."
+        "In November we interview 20 home food sellers in NCR to test the flow and our price. In December we show the full flow live: one voice note to a label, a costing, a batch, a checklist and a listing in under three minutes.\n" +
+        "Then a six-month pilot with 50 sellers. We'll judge it on one thing: at least 25 of them with a compliant label and a sale beyond their town."
     );
   }
 
@@ -717,7 +717,7 @@ async function build() {
       { text: "Ghar", options: { color: COL.bg } },
       { text: "Se", options: { color: COL.turmeric } },
     ], { x: M + 0.1, y: 5.95, w: 3, h: 0.7, fontFace: HEAD, fontSize: 40, valign: "middle" });
-    txt(s, "[email]  ·  [GitHub repo link]", {
+    txt(s, "adywakes@gmail.com  ·  github.com/AdyWakes/GharSe", {
       x: 4.2, y: 5.95, w: W - M - 4.2, h: 0.7, fontSize: 20, color: COL.bg, align: "right", valign: "middle",
     });
 
