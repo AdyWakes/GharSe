@@ -27,14 +27,13 @@ npm install
 `render.sh` needs LibreOffice (`soffice`) and poppler (`pdftoppm`), with the two fonts installed
 (e.g. copy `fonts/*` to `~/.fonts` and run `fc-cache -f`).
 
-## Placeholders to fill
+## Filled-in values
 
-Search the deck for `[`:
-
-- Slide 1: `[Team name]`, `[Founder names]`
-- Slide 8: `[₹__/month]` seller plan price
-- Slide 10: `[to add]` interview findings, `[__]` pilot seller count (twice: roadmap card and success metric)
-- Slide 11: `[email]`, `[GitHub repo link]`
+- Slide 1: Team Clo, founder Adarsh Kumar
+- Slide 8: seller plan at ₹99/month, first product free (pilot price, to be tested in interviews)
+- Slide 10: Nov interviews with 20 sellers; pilot with 50 sellers; success metric 25 of 50.
+  These are targets, not results. Replace the Nov card with real findings once interviews happen.
+- Slide 11: adywakes@gmail.com, github.com/AdyWakes/GharSe
 
 ## Sources for slide 3
 
