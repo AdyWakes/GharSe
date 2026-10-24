@@ -1,0 +1,309 @@
+// GharSe data model.
+//
+// This is the single source schema. It targets SQLite for local dev.
+// `npm run schema:postgres` writes prisma/postgres/schema.prisma for Supabase.
+// To keep both databases happy we avoid enums and native Json columns:
+// enum-like fields are plain strings (allowed values listed in comments, and
+// validated with zod in src/lib/types.ts), and structured blobs are JSON text.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------- seller side
+
+model Seller {
+  id                  String   @id @default(cuid())
+  phone               String   @unique // E.164, e.g. +919876543210
+  name                String?
+  language            String   @default("hi") // hi | en
+  kitchenAddress      String?
+  city                String?
+  district            String?
+  state               String?
+  pincode             String?
+  customerCareContact String? // phone or email printed on the label
+  fssaiStatus         String   @default("unknown") // unknown | none | applied | basic | state | central
+  fssaiNumber         String?
+  fssaiIssuedOn       DateTime?
+  annualTurnoverInr   Int? // rough yearly turnover she reports
+  // Agent conversation context (JSON): pending question, focused product, etc.
+  agentContext        String   @default("{}")
+  isDemo              Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  products       Product[]
+  messages       Message[]
+  decisions      DecisionLog[]
+  nudges         Nudge[]
+  prices         IngredientPrice[]
+  registrations  RegistrationChecklist[]
+  officerContact FoodSafetyOfficer?     @relation(fields: [officerId], references: [id])
+  officerId      String?
+}
+
+model Product {
+  id                  String   @id @default(cuid())
+  sellerId            String
+  seller              Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  slug                String // short code used in batch numbers, e.g. AAC
+  nameHi              String
+  nameEn              String
+  category            String // pickle | sweet | snack | spice_mix | papad | other
+  foodType            String   @default("veg") // veg | nonveg
+  unitName            String   @default("jar") // jar | box | packet | pouch
+  packSizeG           Float // net quantity per unit, grams
+  currentPriceInr     Float? // what she charges today, if she sells already
+  // Shelf life is the maker's declaration, not a regulatory value.
+  shelfLifeDays       Int?
+  shelfLifeSource     String   @default("unknown") // unknown | maker_estimate | lab_tested
+  storageInstructions String?
+  // Cached readiness snapshot (JSON) for the dashboard. The agent recomputes
+  // it deterministically from the rows below; this is never the source of truth.
+  readinessCache      String   @default("{}")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  recipes      RecipeVersion[]
+  costings     Costing[]
+  labels       Label[]
+  batches      Batch[]
+  listings     ListingPack[]
+  nudges       Nudge[]
+  decisions    DecisionLog[]
+  labReferrals LabReferral[]
+
+  @@unique([sellerId, slug])
+}
+
+model RecipeVersion {
+  id             String    @id @default(cuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  version        Int
+  status         String    @default("draft") // draft | confirmed | superseded
+  // Finished weight of one batch after cooking/drying, grams. Raw input weight
+  // is computed from ingredients; the difference drives the moisture adjustment.
+  batchYieldG    Float?
+  yieldSource    String    @default("unknown") // unknown | maker_stated | estimated
+  sourceType     String    @default("text") // text | voice | photo | seed
+  sourceMediaId  String? // Message id of the voice note / photo it came from
+  sourceText     String? // transcript or OCR text the agent extracted from
+  confirmedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  ingredients RecipeIngredient[]
+  costings    Costing[]
+  labels      Label[]
+  batches     Batch[]
+
+  @@unique([productId, version])
+}
+
+model RecipeIngredient {
+  id                  String        @id @default(cuid())
+  recipeVersionId     String
+  recipeVersion       RecipeVersion @relation(fields: [recipeVersionId], references: [id], onDelete: Cascade)
+  position            Int
+  ingredientKey       String? // key into data/ingredients.yaml, null if unknown
+  spokenName          String // as she said or wrote it, e.g. "sarson tel"
+  quantity            Float // as stated
+  unit                String // as stated: kg | g | l | ml | katori | mutthi | chammach | piece ...
+  grams               Float? // deterministic conversion result
+  conversionConfirmed Boolean       @default(false) // she confirmed the grams value
+  conversionNote      String? // e.g. "1 katori besan = 120 g (estimate)"
+}
+
+// Her own ingredient prices. Defaults come from data/ingredients.yaml.
+model IngredientPrice {
+  id            String   @id @default(cuid())
+  sellerId      String
+  seller        Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  ingredientKey String
+  pricePerKgInr Float // per kg, or per litre for liquids priced by volume
+  priceBasis    String   @default("kg") // kg | litre | piece
+  source        String   @default("maker") // maker | default
+  updatedAt     DateTime @updatedAt
+
+  @@unique([sellerId, ingredientKey])
+}
+
+model Costing {
+  id              String        @id @default(cuid())
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  recipeVersionId String
+  recipeVersion   RecipeVersion @relation(fields: [recipeVersionId], references: [id])
+  inputs          String // JSON CostingInputs (src/core/costing.ts)
+  result          String // JSON CostingResult, produced only by src/core/costing.ts
+  // A person signs off on every cost (organisers' boundary).
+  status          String        @default("draft") // draft | checked
+  checkedAt       DateTime?
+  createdAt       DateTime      @default(now())
+
+  labels Label[]
+}
+
+model Label {
+  id              String        @id @default(cuid())
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  recipeVersionId String
+  recipeVersion   RecipeVersion @relation(fields: [recipeVersionId], references: [id])
+  costingId       String?
+  costing         Costing?      @relation(fields: [costingId], references: [id])
+  batchId         String?
+  data            String // JSON LabelData: every field + the rule ids that required it
+  sizeKey         String // see src/outputs/label sizes
+  pdfPath         String?
+  pngPath         String?
+  // Draft until she taps "I checked this".
+  status          String        @default("draft") // draft | checked
+  checkedAt       DateTime?
+  createdAt       DateTime      @default(now())
+}
+
+model Batch {
+  id              String        @id @default(cuid())
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  recipeVersionId String
+  recipeVersion   RecipeVersion @relation(fields: [recipeVersionId], references: [id])
+  batchNumber     String        @unique
+  units           Int
+  mfgDate         DateTime
+  bestBefore      DateTime?
+  spokenText      String? // "aaj 10 jar aam ka achaar banaya"
+  createdAt       DateTime      @default(now())
+}
+
+model RegistrationChecklist {
+  id              String   @id @default(cuid())
+  sellerId        String
+  seller          Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  recommendedType String // basic_registration | state_licence | central_licence
+  data            String // JSON: documents, pre-filled fields, rule ids
+  createdAt       DateTime @default(now())
+}
+
+model ListingPack {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  data      String // JSON: titles, descriptions (hi/en), attributes, image tips
+  createdAt DateTime @default(now())
+}
+
+// ------------------------------------------------------------ conversation
+
+model Message {
+  id         String   @id @default(cuid())
+  sellerId   String
+  seller     Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  channel    String // sim | whatsapp
+  direction  String // in | out
+  kind       String // text | image | audio | document | buttons
+  text       String?
+  mediaPath  String? // path under storage/
+  mediaMime  String?
+  transcript String? // STT result for audio
+  buttons    String? // JSON [{id,title}] for quick replies
+  externalId String? // WhatsApp message id
+  createdAt  DateTime @default(now())
+
+  @@index([sellerId, createdAt])
+}
+
+// Every agent action, with the reason. This is the decision trail for judges.
+model DecisionLog {
+  id        String   @id @default(cuid())
+  sellerId  String
+  seller    Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  action    String // e.g. plan_next_step, extract_recipe, compute_costing
+  reason    String // plain-language why
+  detail    String   @default("{}") // JSON: inputs/outputs, function names
+  ruleIds   String   @default("[]") // JSON array of fssai.yaml rule ids cited
+  actor     String   @default("agent") // agent | planner | core | system | seller
+  createdAt DateTime @default(now())
+
+  @@index([sellerId, createdAt])
+}
+
+model Nudge {
+  id        String    @id @default(cuid())
+  sellerId  String
+  seller    Seller    @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      String // best_before_soon | price_below_cost | missing_allergen | turnover_near_threshold | shelf_life_lab_test
+  dedupeKey String    @unique
+  message   String // JSON {hi, en}
+  ruleIds   String    @default("[]")
+  status    String    @default("open") // open | sent | dismissed | resolved
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// ------------------------------------------------- other stakeholders (stubs)
+// Modelled lightly so the agent can refer to them later. No features yet.
+
+model TestingLab {
+  id             String        @id @default(cuid())
+  name           String
+  city           String?
+  state          String?
+  nablAccredited Boolean? // null = not verified
+  fssaiNotified  Boolean?
+  services       String        @default("[]") // JSON: shelf_life, nutrition, microbial, ...
+  contact        String?
+  isPlaceholder  Boolean       @default(true)
+  referrals      LabReferral[]
+}
+
+model LabReferral {
+  id        String     @id @default(cuid())
+  productId String
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  labId     String?
+  lab       TestingLab? @relation(fields: [labId], references: [id])
+  testType  String // shelf_life | nutrition | microbial
+  status    String     @default("suggested") // suggested | contacted | sample_sent | report_received
+  notes     String?
+  createdAt DateTime   @default(now())
+}
+
+model Buyer {
+  id            String  @id @default(cuid())
+  name          String
+  kind          String // ondc_seller_app | marketplace | retailer | distributor
+  city          String?
+  requirements  String  @default("[]") // JSON list of what they ask sellers for
+  isPlaceholder Boolean @default(true)
+}
+
+model PackagingSupplier {
+  id            String  @id @default(cuid())
+  name          String
+  city          String?
+  items         String  @default("[]") // JSON: [{item, unitPriceInr, moq}]
+  contact       String?
+  isPlaceholder Boolean @default(true)
+}
+
+model FoodSafetyOfficer {
+  id            String   @id @default(cuid())
+  district      String
+  state         String
+  officeAddress String?
+  contact       String?
+  isPlaceholder Boolean  @default(true)
+  sellers       Seller[]
+}
