@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  /* WhatsApp-like chat surface (the simulator should feel familiar). */
+  --color-wa-header: #075e54;
+  --color-wa-accent: #128c7e;
+  --color-wa-green: #25d366;
+  --color-wa-bg: #ece5dd;
+  --color-wa-mine: #dcf8c6;
+  --color-wa-theirs: #ffffff;
+  --color-wa-meta: #667781;
+
+  /* GharSe brand */
+  --color-chilli: #9e2b25;
+  --color-turmeric: #e0a526;
+  --color-cream: #fbf7f0;
+  --color-ink: #1e1b18;
+  --color-muted: #5e554d;
+
+  /* System fonts only: no web-font download on slow 3G. Android ships Noto Sans Devanagari. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari",
+    "Nirmala UI", sans-serif;
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hindi needs a little more line height for matras. */
+:lang(hi) body {
+  line-height: 1.6;
+}

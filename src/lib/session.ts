@@ -5,7 +5,13 @@ import { cookies } from "next/headers";
 import { config } from "./config";
 import { db } from "./db";
 
-const COOKIE = "gs_session";
+export const SESSION_COOKIE = "gs_session";
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 90,
+};
 
 function sign(value: string): string {
   return createHmac("sha256", config.sessionSecret).update(value).digest("base64url");
@@ -27,20 +33,15 @@ export function decodeSession(token: string | undefined): string | null {
 }
 
 export async function setSession(sellerId: string) {
-  (await cookies()).set(COOKIE, encodeSession(sellerId), {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 90,
-  });
+  (await cookies()).set(SESSION_COOKIE, encodeSession(sellerId), SESSION_COOKIE_OPTIONS);
 }
 
 export async function clearSession() {
-  (await cookies()).delete(COOKIE);
+  (await cookies()).delete(SESSION_COOKIE);
 }
 
 export async function currentSeller() {
-  const id = decodeSession((await cookies()).get(COOKIE)?.value);
+  const id = decodeSession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!id) return null;
   return db.seller.findUnique({ where: { id } });
 }
